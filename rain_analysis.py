@@ -158,7 +158,7 @@ with tab2:
     st.pyplot(fig)
 
 # -----------------------------
-# TAB 3 — STATISTIEKEN (MET MAANDNAMEN + PLOTLY)
+# TAB 3 — STATISTIEKEN
 # -----------------------------
 with tab3:
     st.subheader(f"Statistieken ({start_year}–{end_year} | {year_count} jaren)")
@@ -169,13 +169,13 @@ with tab3:
     driest_name = month_names[stats["driest"]]
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Gem. jaarlijkse neerslag", f"{stats['avg_annual']:.1f} mm")
+    col1.metric("Gemiddelde over geselecteerde periode", f"{stats['avg_annual']:.1f} mm")
     col2.metric("Natste maand", wettest_name)
     col3.metric("Droogste maand", driest_name)
 
     st.write("Gemiddelde maandelijkse neerslag:")
 
-    # --- Nieuwe Plotly grafiek met maandnamen ---
+    # --- Gemiddelde per maand ---
     monthly_avg = stats["monthly_avg"]
 
     fig = go.Figure()
@@ -193,6 +193,31 @@ with tab3:
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
+    # ----------------------------------------------------
+    # ⭐ NIEUW: Jaarlijkse gemiddelde neerslag per jaar
+    # ----------------------------------------------------
+    st.subheader("Jaarlijkse gemiddelde neerslag per jaar")
+
+    annual_totals = df_filtered.groupby("Year")["MonthlyTotal"].sum()
+    annual_avg = annual_totals / 12
+
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(
+        x=annual_avg.index,
+        y=annual_avg.values,
+        mode='lines+markers',
+        line=dict(color='royalblue', width=3),
+        hovertemplate="<b>Jaar %{x}</b><br>Gemiddelde: %{y:.1f} mm<extra></extra>"
+    ))
+
+    fig2.update_layout(
+        xaxis_title="Jaar",
+        yaxis_title="Gemiddelde neerslag (mm)",
+        height=450
+    )
+
+    st.plotly_chart(fig2, use_container_width=True)
 
 # -----------------------------
 # TAB 4 — SEIZOENEN VAN SURINAME
