@@ -116,7 +116,6 @@ with tab1:
         barmode='group',
         xaxis_title="Maand",
         yaxis_title="Neerslag (mm)",
-        title=f"Maandtotalen per jaar – {station}",
         legend_title="Jaar",
         height=600
     )
