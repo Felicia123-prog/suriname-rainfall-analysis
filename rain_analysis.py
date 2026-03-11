@@ -170,9 +170,9 @@ with tab3:
 
     col1, col2, col3 = st.columns(3)
 
-    # ⭐ HIER IS DE NIEUWE TITEL
+    # ⭐ NIEUWE TITEL (volledig, correct, niet afgekort)
     col1.metric(
-        f"Gem. neerslag over de periode ({year_count} jaren)",
+        f"Gem. jaarlijkse neerslag over de periode ({year_count} jaren)",
         f"{stats['avg_annual']:.1f} mm"
     )
 
