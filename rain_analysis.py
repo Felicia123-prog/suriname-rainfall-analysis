@@ -173,9 +173,9 @@ with tab3:
     col2.metric("Natste maand", wettest_name)
     col3.metric("Droogste maand", driest_name)
 
-    st.write("Gemiddelde maandelijkse neerslag:")
+    st.write("Langjarig gemiddelde maandsom van de neerslag:")
 
-    # --- Gemiddelde per maand ---
+    # --- Langjarig gemiddelde maandsom per maand ---
     monthly_avg = stats["monthly_avg"]
 
     fig = go.Figure()
@@ -195,23 +195,24 @@ with tab3:
     st.plotly_chart(fig, use_container_width=True)
 
     # ----------------------------------------------------
-    # ⭐ NIEUW: Jaarlijkse neerslag per jaar (STAaFDIAGRAM)
+    # ⭐ Jaarlijkse gemiddelde neerslag per jaar (STAaFDIAGRAM)
     # ----------------------------------------------------
-    st.subheader("Jaarlijkse neerslag per jaar")
+    st.subheader("Gemiddelde jaarlijkse neerslag per jaar")
 
     annual_totals = df_filtered.groupby("Year")["MonthlyTotal"].sum()
+    annual_avg = annual_totals / 12  # 👉 jaar­gemiddelde
 
     fig2 = go.Figure()
     fig2.add_trace(go.Bar(
-        x=annual_totals.index,
-        y=annual_totals.values,
+        x=annual_avg.index,
+        y=annual_avg.values,
         marker_color="royalblue",
-        hovertemplate="<b>Jaar %{x}</b><br>Totaal: %{y:.1f} mm<extra></extra>"
+        hovertemplate="<b>Jaar %{x}</b><br>Gemiddelde: %{y:.1f} mm<extra></extra>"
     ))
 
     fig2.update_layout(
         xaxis_title="Jaar",
-        yaxis_title="Jaarlijkse neerslag (mm)",
+        yaxis_title="Gemiddelde jaarlijkse neerslag (mm)",
         height=450
     )
 
