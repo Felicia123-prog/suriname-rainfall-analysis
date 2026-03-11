@@ -1,3 +1,64 @@
+import os
+import pandas as pd
+import streamlit as st
+import matplotlib.pyplot as plt
+
+# -----------------------------
+# DATA MAP
+# -----------------------------
+DATA_DIR = "data"
+
+# -----------------------------
+# FUNCTIES
+# -----------------------------
+
+def load_all_stations():
+    frames = []
+    for fname in os.listdir(DATA_DIR):
+        if fname.endswith(".xlsx"):
+            station = fname.replace(".xlsx", "")
+            path = os.path.join(DATA_DIR, fname)
+            df = pd.read_excel(path)
+            df["Station"] = station
+            frames.append(df)
+    return pd.concat(frames, ignore_index=True)
+
+
+def filter_last_years(df, years):
+    max_year = df["Year"].max()
+    min_year = max_year - years + 1
+    return df[df["Year"].between(min_year, max_year)]
+
+
+def plot_monthly_totals(df, station):
+    pivot = df.pivot_table(index="Month", columns="Year", values="MonthlyTotal")
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    for year in pivot.columns:
+        ax.plot(pivot.index, pivot[year], marker="o", label=str(year))
+
+    ax.set_title(f"Maandtotalen per jaar – {station}")
+    ax.set_xlabel("Maand")
+    ax.set_ylabel("Neerslag (mm)")
+    ax.set_xticks(range(1, 13))
+    ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
+
+    st.pyplot(fig)
+
+
+def compute_statistics(df):
+    yearly = df.groupby(["Station", "Year"])["MonthlyTotal"].sum().reset_index()
+    monthly_avg = df.groupby("Month")["MonthlyTotal"].mean()
+
+    stats = {
+        "avg_annual": yearly["MonthlyTotal"].mean(),
+        "monthly_avg": monthly_avg,
+        "wettest": monthly_avg.idxmax(),
+        "driest": monthly_avg.idxmin(),
+    }
+    return stats
+
+
 # -----------------------------
 # STREAMLIT UI
 # -----------------------------
