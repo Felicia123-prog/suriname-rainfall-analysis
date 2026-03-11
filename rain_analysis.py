@@ -1,17 +1,12 @@
 import os
 import pandas as pd
+import streamlit as st
 import matplotlib.pyplot as plt
 
 DATA_DIR = "data"
-OUTPUT_FIG_DIR = os.path.join("output", "figures")
-OUTPUT_REPORT_DIR = os.path.join("output", "reports")
-
-os.makedirs(OUTPUT_FIG_DIR, exist_ok=True)
-os.makedirs(OUTPUT_REPORT_DIR, exist_ok=True)
 
 
 def load_all_stations():
-    """Lees alle Excel-bestanden (.xlsx) in de data-map."""
     frames = []
     for fname in os.listdir(DATA_DIR):
         if fname.endswith(".xlsx"):
@@ -24,88 +19,69 @@ def load_all_stations():
 
 
 def filter_last_years(df, years):
-    if years is None:
-        return df
     max_year = df["Year"].max()
     min_year = max_year - years + 1
     return df[df["Year"].between(min_year, max_year)]
 
 
-def plot_monthly_totals(df, station, years):
-    df_station = df[df["Station"] == station]
-    df_station = filter_last_years(df_station, years)
+def plot_monthly_totals(df, station):
+    pivot = df.pivot_table(index="Month", columns="Year", values="MonthlyTotal")
 
-    pivot = df_station.pivot_table(index="Month", columns="Year", values="MonthlyTotal")
-
-    plt.figure(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(10, 5))
     for year in pivot.columns:
-        plt.plot(pivot.index, pivot[year], marker="o", label=str(year))
+        ax.plot(pivot.index, pivot[year], marker="o", label=str(year))
 
-    plt.title(f"Maandtotalen per jaar – {station} ({years or 'alle'} jaar)")
-    plt.xlabel("Maand")
-    plt.ylabel("Neerslag (mm)")
-    plt.xticks(range(1, 13))
-    plt.legend(loc="upper left", bbox_to_anchor=(1, 1))
-    plt.tight_layout()
-
-    out = os.path.join(OUTPUT_FIG_DIR, f"{station}_{years or 'all'}years.png")
-    plt.savefig(out, dpi=150)
-    plt.close()
+    ax.set_title(f"Maandtotalen per jaar – {station}")
+    ax.set_xlabel("Maand")
+    ax.set_ylabel("Neerslag (mm)")
+    ax.set_xticks(range(1, 13))
+    ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
+    st.pyplot(fig)
 
 
 def compute_statistics(df):
-    report = []
-
     yearly = df.groupby(["Station", "Year"])["MonthlyTotal"].sum().reset_index()
-
-    avg_annual = yearly["MonthlyTotal"].mean()
-    report.append(f"Gemiddelde jaarlijkse neerslag (alle stations): {avg_annual:.1f} mm")
-
     monthly_avg = df.groupby("Month")["MonthlyTotal"].mean()
-    report.append("\nGemiddelde maandelijkse neerslag:")
-    for m, v in monthly_avg.items():
-        report.append(f"  Maand {m}: {v:.1f} mm")
 
-    wettest = monthly_avg.idxmax()
-    driest = monthly_avg.idxmin()
-    report.append(f"\nNatste maand: {wettest}")
-    report.append(f"Droogste maand: {driest}")
-
-    report.append("\nTrend per station (eerste 10 jaar vs laatste 10 jaar):")
-    for station, g in yearly.groupby("Station"):
-        g = g.sort_values("Year")
-        if len(g) >= 20:
-            first10 = g.head(10)["MonthlyTotal"].mean()
-            last10 = g.tail(10)["MonthlyTotal"].mean()
-            diff = last10 - first10
-            report.append(f"  {station}: {diff:+.1f} mm verschil")
-
-    return "\n".join(report)
+    stats = {
+        "avg_annual": yearly["MonthlyTotal"].mean(),
+        "monthly_avg": monthly_avg,
+        "wettest": monthly_avg.idxmax(),
+        "driest": monthly_avg.idxmin(),
+    }
+    return stats
 
 
-def save_report(text):
-    path = os.path.join(OUTPUT_REPORT_DIR, "rainfall_report.txt")
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(text)
+# ---------------- STREAMLIT UI ---------------- #
 
+st.title("🌧️ Suriname Rainfall & Climate Analysis")
+st.write("Analyseer maandelijkse neerslagdata van Surinaamse weerstations.")
 
-def main():
-    df = load_all_stations()
+df = load_all_stations()
 
-    try:
-        years = int(input("Hoeveel jaren analyseren? (bijv. 5, 10, 30, of leeg voor alle): ") or 0)
-        years = years if years > 0 else None
-    except:
-        years = None
+# Station kiezen
+stations = sorted(df["Station"].unique())
+station = st.selectbox("Kies een station:", stations)
 
-    for station in df["Station"].unique():
-        plot_monthly_totals(df, station, years)
+# Aantal jaren kiezen
+max_years = df["Year"].nunique()
+years = st.slider("Aantal jaren om te analyseren:", 1, max_years, 10)
 
-    stats = compute_statistics(df)
-    save_report(stats)
+# Filter data
+df_station = df[df["Station"] == station]
+df_filtered = filter_last_years(df_station, years)
 
-    print("\nAnalyse voltooid. Grafieken en rapport staan in de map 'output'.")
+# Grafiek tonen
+st.subheader("📊 Maandtotalen per jaar")
+plot_monthly_totals(df_filtered, station)
 
+# Statistieken tonen
+st.subheader("📈 Statistieken")
+stats = compute_statistics(df_filtered)
 
-if __name__ == "__main__":
-    main()
+st.write(f"**Gemiddelde jaarlijkse neerslag:** {stats['avg_annual']:.1f} mm")
+st.write(f"**Natste maand:** {stats['wettest']}")
+st.write(f"**Droogste maand:** {stats['driest']}")
+
+st.write("**Gemiddelde maandelijkse neerslag:**")
+st.line_chart(stats["monthly_avg"])
