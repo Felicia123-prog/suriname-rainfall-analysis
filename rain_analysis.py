@@ -30,22 +30,6 @@ def filter_last_years(df, years):
     return df[df["Year"].between(min_year, max_year)]
 
 
-def plot_monthly_totals(df, station):
-    pivot = df.pivot_table(index="Month", columns="Year", values="MonthlyTotal")
-
-    fig, ax = plt.subplots(figsize=(10, 5))
-    for year in pivot.columns:
-        ax.plot(pivot.index, pivot[year], marker="o", label=str(year))
-
-    ax.set_title(f"Maandtotalen per jaar – {station}")
-    ax.set_xlabel("Maand")
-    ax.set_ylabel("Neerslag (mm)")
-    ax.set_xticks(range(1, 13))
-    ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
-
-    st.pyplot(fig)
-
-
 def compute_statistics(df):
     yearly = df.groupby(["Station", "Year"])["MonthlyTotal"].sum().reset_index()
     monthly_avg = df.groupby("Month")["MonthlyTotal"].mean()
@@ -90,14 +74,45 @@ df_station = df[df["Station"] == station]
 df_filtered = filter_last_years(df_station, years)
 
 # Tabs
-tab1, tab2, tab3 = st.tabs(["📊 Lijngrafiek", "🌈 Regenval Matrix", "📈 Statistieken"])
+tab1, tab2, tab3 = st.tabs(["📊 Staafdiagram", "🌈 Regenval Matrix", "📈 Statistieken"])
 
 # -----------------------------
-# TAB 1 — LIJNGRAFIEK
+# TAB 1 — STAAFDIAGRAM
 # -----------------------------
 with tab1:
-    st.subheader("Maandtotalen per jaar")
-    plot_monthly_totals(df_filtered, station)
+    st.subheader("Maandtotalen per jaar (Staafdiagram)")
+
+    pivot = df_filtered.pivot_table(
+        index="Month",
+        columns="Year",
+        values="MonthlyTotal"
+    )
+
+    # Maandnamen op de x-as
+    pivot.index = [month_names[m] for m in pivot.index]
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    bar_width = 0.1
+    months = range(len(pivot.index))
+
+    for i, year in enumerate(pivot.columns):
+        ax.bar(
+            [m + i * bar_width for m in months],
+            pivot[year],
+            width=bar_width,
+            label=str(year)
+        )
+
+    ax.set_xticks([m + bar_width for m in months])
+    ax.set_xticklabels(pivot.index)
+
+    ax.set_xlabel("Maand")
+    ax.set_ylabel("Neerslag (mm)")
+    ax.set_title(f"Maandtotalen per jaar – {station}")
+    ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
+
+    st.pyplot(fig)
 
 # -----------------------------
 # TAB 2 — REGENVAL MATRIX
