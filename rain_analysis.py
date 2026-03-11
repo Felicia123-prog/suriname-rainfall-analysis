@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
 # -----------------------------
 # DATA MAP
@@ -87,10 +88,10 @@ df_filtered = df_station[df_station["Year"].between(start_year, end_year)]
 tab1, tab2, tab3 = st.tabs(["📊 Staafdiagram", "🌈 Regenval Matrix", "📈 Statistieken"])
 
 # -----------------------------
-# TAB 1 — STAAFDIAGRAM
+# TAB 1 — INTERACTIEVE STAAFDIAGRAM (PLOTLY)
 # -----------------------------
 with tab1:
-    st.subheader("Maandtotalen per jaar (Staafdiagram)")
+    st.subheader("Maandtotalen per jaar (Interactieve Staafdiagram)")
 
     pivot = df_filtered.pivot_table(
         index="Month",
@@ -98,31 +99,29 @@ with tab1:
         values="MonthlyTotal"
     )
 
-    # Maandnamen op de x-as
-    pivot.index = [month_names[m] for m in pivot.index]
+    month_labels = [month_names[m] for m in pivot.index]
 
-    fig, ax = plt.subplots(figsize=(12, 6))
+    fig = go.Figure()
 
-    bar_width = 0.1
-    months = range(len(pivot.index))
+    for year in pivot.columns:
+        fig.add_trace(go.Bar(
+            x=month_labels,
+            y=pivot[year],
+            name=str(year),
+            hovertemplate="<b>%{x}</b><br>Jaar: " + str(year) +
+                          "<br>Neerslag: %{y} mm<extra></extra>"
+        ))
 
-    for i, year in enumerate(pivot.columns):
-        ax.bar(
-            [m + i * bar_width for m in months],
-            pivot[year],
-            width=bar_width,
-            label=str(year)
-        )
+    fig.update_layout(
+        barmode='group',
+        xaxis_title="Maand",
+        yaxis_title="Neerslag (mm)",
+        title=f"Maandtotalen per jaar – {station}",
+        legend_title="Jaar",
+        height=600
+    )
 
-    ax.set_xticks([m + bar_width for m in months])
-    ax.set_xticklabels(pivot.index)
-
-    ax.set_xlabel("Maand")
-    ax.set_ylabel("Neerslag (mm)")
-    ax.set_title(f"Maandtotalen per jaar – {station}")
-    ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
-
-    st.pyplot(fig)
+    st.plotly_chart(fig, use_container_width=True)
 
 # -----------------------------
 # TAB 2 — REGENVAL MATRIX
