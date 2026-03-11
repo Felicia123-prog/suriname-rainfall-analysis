@@ -24,12 +24,6 @@ def load_all_stations():
     return pd.concat(frames, ignore_index=True)
 
 
-def filter_last_years(df, years):
-    max_year = df["Year"].max()
-    min_year = max_year - years + 1
-    return df[df["Year"].between(min_year, max_year)]
-
-
 def compute_statistics(df):
     yearly = df.groupby(["Station", "Year"])["MonthlyTotal"].sum().reset_index()
     monthly_avg = df.groupby("Month")["MonthlyTotal"].mean()
@@ -65,13 +59,29 @@ df["MonthName"] = df["Month"].map(month_names)
 stations = sorted(df["Station"].unique())
 station = st.selectbox("Kies een station:", stations)
 
-# Aantal jaren kiezen
-max_years = df["Year"].nunique()
-years = st.slider("Aantal jaren om te analyseren:", 1, max_years, 10)
-
-# Filteren
+# Filter data voor gekozen station
 df_station = df[df["Station"] == station]
-df_filtered = filter_last_years(df_station, years)
+
+# -----------------------------
+# JAARSELECTIE (BEGIN + EINDE)
+# -----------------------------
+available_years = sorted(df_station["Year"].unique())
+
+colA, colB = st.columns(2)
+
+with colA:
+    start_year = st.selectbox("Beginjaar:", available_years, index=0)
+
+with colB:
+    end_year = st.selectbox("Eindjaar:", available_years, index=len(available_years)-1)
+
+# Validatie
+if start_year > end_year:
+    st.error("Beginjaar mag niet groter zijn dan eindjaar.")
+    st.stop()
+
+# Filteren op jaarbereik
+df_filtered = df_station[df_station["Year"].between(start_year, end_year)]
 
 # Tabs
 tab1, tab2, tab3 = st.tabs(["📊 Staafdiagram", "🌈 Regenval Matrix", "📈 Statistieken"])
