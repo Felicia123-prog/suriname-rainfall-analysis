@@ -1,68 +1,3 @@
-import os
-import pandas as pd
-import streamlit as st
-import matplotlib.pyplot as plt
-
-# -----------------------------
-# DATA MAP
-# -----------------------------
-DATA_DIR = "data"
-
-# -----------------------------
-# FUNCTIES
-# -----------------------------
-
-def load_all_stations():
-    """Lees alle Excel-bestanden (.xlsx) in de data-map."""
-    frames = []
-    for fname in os.listdir(DATA_DIR):
-        if fname.endswith(".xlsx"):
-            station = fname.replace(".xlsx", "")
-            path = os.path.join(DATA_DIR, fname)
-            df = pd.read_excel(path)
-            df["Station"] = station
-            frames.append(df)
-    return pd.concat(frames, ignore_index=True)
-
-
-def filter_last_years(df, years):
-    """Filter op de laatste X jaren."""
-    max_year = df["Year"].max()
-    min_year = max_year - years + 1
-    return df[df["Year"].between(min_year, max_year)]
-
-
-def plot_monthly_totals(df, station):
-    """Maak een grafiek van maandtotalen per jaar."""
-    pivot = df.pivot_table(index="Month", columns="Year", values="MonthlyTotal")
-
-    fig, ax = plt.subplots(figsize=(10, 5))
-    for year in pivot.columns:
-        ax.plot(pivot.index, pivot[year], marker="o", label=str(year))
-
-    ax.set_title(f"Maandtotalen per jaar – {station}")
-    ax.set_xlabel("Maand")
-    ax.set_ylabel("Neerslag (mm)")
-    ax.set_xticks(range(1, 13))
-    ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
-
-    st.pyplot(fig)
-
-
-def compute_statistics(df):
-    """Bereken statistieken voor de geselecteerde data."""
-    yearly = df.groupby(["Station", "Year"])["MonthlyTotal"].sum().reset_index()
-    monthly_avg = df.groupby("Month")["MonthlyTotal"].mean()
-
-    stats = {
-        "avg_annual": yearly["MonthlyTotal"].mean(),
-        "monthly_avg": monthly_avg,
-        "wettest": monthly_avg.idxmax(),
-        "driest": monthly_avg.idxmin(),
-    }
-    return stats
-
-
 # -----------------------------
 # STREAMLIT UI
 # -----------------------------
@@ -72,6 +7,14 @@ st.write("Interactieve analyse van maandelijkse neerslagdata van Surinaamse weer
 
 # Data laden
 df = load_all_stations()
+
+# Maandnamen toevoegen
+month_names = {
+    1: "Jan", 2: "Feb", 3: "Mrt", 4: "Apr",
+    5: "Mei", 6: "Jun", 7: "Jul", 8: "Aug",
+    9: "Sep", 10: "Okt", 11: "Nov", 12: "Dec"
+}
+df["MonthName"] = df["Month"].map(month_names)
 
 # Station kiezen
 stations = sorted(df["Station"].unique())
@@ -86,7 +29,7 @@ df_station = df[df["Station"] == station]
 df_filtered = filter_last_years(df_station, years)
 
 # Tabs
-tab1, tab2, tab3 = st.tabs(["📊 Lijngrafiek", "🔥 Heatmap", "📈 Statistieken"])
+tab1, tab2, tab3 = st.tabs(["📊 Lijngrafiek", "🌈 Regenval Matrix", "📈 Statistieken"])
 
 # -----------------------------
 # TAB 1 — LIJNGRAFIEK
@@ -96,10 +39,10 @@ with tab1:
     plot_monthly_totals(df_filtered, station)
 
 # -----------------------------
-# TAB 2 — HEATMAP
+# TAB 2 — REGENVAL MATRIX
 # -----------------------------
 with tab2:
-    st.subheader("Heatmap van neerslag per maand/jaar")
+    st.subheader("Regenval Matrix per maand/jaar")
 
     pivot = df_filtered.pivot_table(
         index="Year",
@@ -111,13 +54,13 @@ with tab2:
     cax = ax.imshow(pivot, cmap="Blues", aspect="auto")
 
     ax.set_xticks(range(12))
-    ax.set_xticklabels(range(1, 13))
+    ax.set_xticklabels([month_names[m] for m in range(1, 13)])
     ax.set_yticks(range(len(pivot.index)))
     ax.set_yticklabels(pivot.index)
 
     ax.set_xlabel("Maand")
     ax.set_ylabel("Jaar")
-    ax.set_title(f"Heatmap – {station}")
+    ax.set_title(f"Regenval Matrix – {station}")
 
     fig.colorbar(cax, label="Neerslag (mm)")
     st.pyplot(fig)
