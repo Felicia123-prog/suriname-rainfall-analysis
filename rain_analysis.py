@@ -84,8 +84,16 @@ if start_year > end_year:
 # Filteren op jaarbereik
 df_filtered = df_station[df_station["Year"].between(start_year, end_year)]
 
+# Aantal jaren
+year_count = end_year - start_year + 1
+
 # Tabs
-tab1, tab2, tab3 = st.tabs(["📊 Staafdiagram", "🌈 Regenval Matrix", "📈 Statistieken"])
+tab1, tab2, tab3, tab4 = st.tabs([
+    "📊 Staafdiagram",
+    "🌈 Regenval Matrix",
+    "📈 Statistieken",
+    "🌦️ Seizoenen van Suriname"
+])
 
 # -----------------------------
 # TAB 1 — INTERACTIEVE STAAFDIAGRAM (PLOTLY)
@@ -153,13 +161,46 @@ with tab2:
 # TAB 3 — STATISTIEKEN
 # -----------------------------
 with tab3:
-    st.subheader("Statistieken")
+    st.subheader(f"Statistieken ({start_year}–{end_year} | {year_count} jaren)")
+
     stats = compute_statistics(df_filtered)
+
+    wettest_name = month_names[stats["wettest"]]
+    driest_name = month_names[stats["driest"]]
 
     col1, col2, col3 = st.columns(3)
     col1.metric("Gem. jaarlijkse neerslag", f"{stats['avg_annual']:.1f} mm")
-    col2.metric("Natste maand", stats["wettest"])
-    col3.metric("Droogste maand", stats["driest"])
+    col2.metric("Natste maand", wettest_name)
+    col3.metric("Droogste maand", driest_name)
 
     st.write("Gemiddelde maandelijkse neerslag:")
     st.line_chart(stats["monthly_avg"])
+
+# -----------------------------
+# TAB 4 — SEIZOENEN VAN SURINAME
+# -----------------------------
+with tab4:
+    st.subheader("🌦️ Seizoenen van Suriname")
+
+    st.write("Gebaseerd op de indeling van de Meteorologische Dienst Suriname:")
+
+    st.table(pd.DataFrame({
+        "Seizoen": [
+            "Kleine Regentijd",
+            "Kleine Drogetijd",
+            "Grote Regentijd",
+            "Grote Drogetijd"
+        ],
+        "Periode": [
+            "1e helft Dec – 2e helft Jan",
+            "2e helft Jan – 2e helft Mrt",
+            "2e helft Mrt – 1e helft Aug",
+            "1e helft Aug – 1e helft Dec"
+        ],
+        "Positie ITCZ": [
+            "Boven Suriname",
+            "Ten zuiden van Suriname",
+            "Boven Suriname",
+            "Ten noorden, boven de Atlantische oceaan"
+        ]
+    }))
