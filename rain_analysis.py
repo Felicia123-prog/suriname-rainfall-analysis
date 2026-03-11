@@ -30,7 +30,7 @@ def compute_statistics(df):
     monthly_avg = df.groupby("Month")["MonthlyTotal"].mean()
 
     stats = {
-        "avg_annual": yearly["MonthlyTotal"].mean(),
+        "avg_annual": yearly["MonthlyTotal"].mean(),  # gemiddelde jaartotaal over de periode
         "monthly_avg": monthly_avg,
         "wettest": monthly_avg.idxmax(),
         "driest": monthly_avg.idxmin(),
@@ -169,7 +169,13 @@ with tab3:
     driest_name = month_names[stats["driest"]]
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Gem. jaarlijkse neerslag", f"{stats['avg_annual']:.1f} mm")
+
+    # ⭐ HIER IS DE NIEUWE TITEL
+    col1.metric(
+        f"Gem. neerslag over de periode ({year_count} jaren)",
+        f"{stats['avg_annual']:.1f} mm"
+    )
+
     col2.metric("Natste maand", wettest_name)
     col3.metric("Droogste maand", driest_name)
 
@@ -200,7 +206,7 @@ with tab3:
     st.subheader("Gemiddelde jaarlijkse neerslag per jaar")
 
     annual_totals = df_filtered.groupby("Year")["MonthlyTotal"].sum()
-    annual_avg = annual_totals / 12  # 👉 jaar­gemiddelde
+    annual_avg = annual_totals / 12  # jaar­gemiddelde
 
     fig2 = go.Figure()
     fig2.add_trace(go.Bar(
