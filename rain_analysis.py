@@ -182,7 +182,7 @@ with tab3:
 with tab4:
     st.subheader("🌦️ Seizoenen van Suriname")
 
-    st.write("Gebaseerd op de indeling van de Meteorologische Dienst Suriname:")
+    st.write("Seizoensindeling volgens de methode van het veeljarige gemiddelde maandsom van de neerslag:")
 
     st.table(pd.DataFrame({
         "Seizoen": [
