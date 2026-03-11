@@ -168,9 +168,9 @@ with tab3:
     wettest_name = month_names[stats["wettest"]]
     driest_name = month_names[stats["driest"]]
 
-    col1, col2, col3 = st.columns(3)
+    # ⭐ MEER RUIMTE VOOR DE EERSTE METRIC
+    col1, col2, col3 = st.columns([2.5, 1, 1])
 
-    # ⭐ NIEUWE TITEL (volledig, correct, niet afgekort)
     col1.metric(
         f"Gem. jaarlijkse neerslag over de periode ({year_count} jaren)",
         f"{stats['avg_annual']:.1f} mm"
