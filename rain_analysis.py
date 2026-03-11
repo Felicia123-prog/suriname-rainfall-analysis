@@ -158,7 +158,7 @@ with tab2:
     st.pyplot(fig)
 
 # -----------------------------
-# TAB 3 — STATISTIEKEN
+# TAB 3 — STATISTIEKEN (MET MAANDNAMEN + PLOTLY)
 # -----------------------------
 with tab3:
     st.subheader(f"Statistieken ({start_year}–{end_year} | {year_count} jaren)")
@@ -174,15 +174,31 @@ with tab3:
     col3.metric("Droogste maand", driest_name)
 
     st.write("Gemiddelde maandelijkse neerslag:")
-    st.line_chart(stats["monthly_avg"])
+
+    # --- Nieuwe Plotly grafiek met maandnamen ---
+    monthly_avg = stats["monthly_avg"]
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=[month_names[m] for m in monthly_avg.index],
+        y=monthly_avg.values,
+        mode='lines+markers',
+        hovertemplate="<b>%{x}</b><br>Gemiddelde: %{y:.1f} mm<extra></extra>"
+    ))
+
+    fig.update_layout(
+        xaxis_title="Maand",
+        yaxis_title="Neerslag (mm)",
+        height=400
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 
 # -----------------------------
 # TAB 4 — SEIZOENEN VAN SURINAME
 # -----------------------------
 with tab4:
-    st.subheader("🌦️ Seizoenen van Suriname")
-
-    st.write("Seizoensindeling volgens de methode van het veeljarige gemiddelde maandsom van de neerslag:")
+    st.subheader("Seizoensindeling volgens de methode van het veeljarige gemiddelde maandsom van de neerslag")
 
     st.table(pd.DataFrame({
         "Seizoen": [
