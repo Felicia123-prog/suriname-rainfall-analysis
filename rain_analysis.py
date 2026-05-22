@@ -42,8 +42,8 @@ def compute_statistics(df):
 # STREAMLIT UI
 # -----------------------------
 
-st.title("🌧️ Suriname Rainfall & Climate Analysis")
-st.write("Interactieve analyse van maandelijkse neerslagdata van Surinaamse weerstations.")
+st.title("🌦️ Historische Neerslaganalyse per Station (Klimaatnormalen)")
+st.write("Interactieve langjarige analyse van maandelijkse neerslaggegevens per weerstation in Suriname.")
 
 # Data laden
 df = load_all_stations()
